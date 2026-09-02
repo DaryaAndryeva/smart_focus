@@ -1,0 +1,675 @@
+.app {
+  display: grid;
+  grid-template-columns: 280px 1fr 300px;
+  height: 100vh;
+  overflow: hidden;
+  background: #0a0a14;
+  color: #e2e8f0;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+/* ===== Left Panel ===== */
+.control-panel {
+  background: #111827;
+  border-right: 1px solid #1e293b;
+  padding: 20px 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.control-panel h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.control-panel section {
+  background: #1a1f2e;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+.control-panel h3 {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  margin: 0 0 10px 0;
+}
+
+.control-panel label {
+  display: block;
+  font-size: 13px;
+  color: #cbd5e1;
+  margin-bottom: 8px;
+}
+
+.control-panel select {
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.control-panel select:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.number-field {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.number-field-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Границы показываем текстом: без растяжки пользователь иначе их не видит */
+.number-field-range {
+  font-size: 11px;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.number-field-body {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.number-field input[type="number"] {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.number-field input[type="number"]:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.number-field input[type="number"]:disabled {
+  opacity: 0.5;
+}
+
+.number-field-suffix {
+  font-size: 12px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.number-field-hint {
+  display: block;
+  margin-top: 2px;
+}
+
+/* Стрелки-степперы оставляем видимыми: они заменяют прежнюю растяжку */
+.number-field input[type="number"]::-webkit-inner-spin-button,
+.number-field input[type="number"]::-webkit-outer-spin-button {
+  opacity: 1;
+  height: 22px;
+}
+
+.checkbox-label {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  accent-color: #6366f1;
+  width: 16px;
+  height: 16px;
+}
+
+.btn-primary {
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px;
+  background: transparent;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  border-color: #f43f5e;
+  color: #f43f5e;
+}
+
+.layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.btn-layout {
+  padding: 6px 8px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-layout:hover:not(:disabled) {
+  border-color: #6366f1;
+  color: #c7d2fe;
+}
+
+.btn-layout.active {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: #6366f1;
+  color: #a5b4fc;
+}
+
+.btn-layout:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.hint {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0 0 8px 0;
+}
+
+/* ── Collapsible section ── */
+.collapsible-section {
+  padding: 0 !important;
+}
+
+.section-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+.section-toggle h3 {
+  margin: 0;
+}
+
+.chevron {
+  font-size: 16px;
+  color: #64748b;
+  transition: transform 0.2s;
+}
+
+.chevron.open {
+  transform: rotate(90deg);
+}
+
+.section-body {
+  padding: 0 14px 14px;
+}
+
+/* ── Upload ── */
+.edge-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 8px 10px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 12px;
+  resize: vertical;
+  margin-bottom: 6px;
+}
+
+.edge-textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.edge-textarea::placeholder {
+  color: #475569;
+}
+
+.upload-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-file {
+  padding: 10px 14px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.btn-file:hover {
+  border-color: #6366f1;
+  color: #c7d2fe;
+}
+
+/* Кнопка «Загрузить» отрисована как flex-элемент той же строки —
+   выравниваем по ней, иначе «Файл» съезжает вниз на 6 px */
+.upload-actions {
+  align-items: stretch;
+  margin-top: 6px;
+}
+
+.file-card {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+}
+
+/* Текст в поле имеет приоритет над файлом — гасим карточку, чтобы это было видно */
+.file-card-muted {
+  opacity: 0.55;
+}
+
+.file-card-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.file-card-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: #e2e8f0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-card-clear {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  line-height: 1;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #64748b;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.file-card-clear:hover {
+  background: #1e293b;
+  color: #f87171;
+}
+
+.file-card-meta {
+  margin-top: 2px;
+  font-size: 11px;
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+}
+
+.file-card-note {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #fbbf24;
+}
+
+.file-progress {
+  margin-top: 6px;
+  height: 3px;
+  background: #1e293b;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.file-progress-bar {
+  height: 100%;
+  background: #6366f1;
+  transition: width 0.15s linear;
+}
+
+.parse-info {
+  margin-top: 6px;
+  font-size: 11px;
+}
+
+.parse-info-ok    { color: #10b981; }
+.parse-info-info  { color: #94a3b8; }
+.parse-info-error { color: #f87171; }
+
+/* ===== Main Area ===== */
+.main-area {
+  position: relative;
+  overflow: hidden;
+  background: #0a0a14;
+}
+
+.graph-canvas {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.graph-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at center, #111827 0%, #0a0a14 70%);
+}
+
+.gl-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 2px 8px;
+  background: rgba(37, 99, 235, 0.18);
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  border-radius: 6px;
+  color: #93c5fd;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  z-index: 40;
+}
+
+.graph-canvas .label-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* слой подписей лежит поверх WebGL и обязан быть прозрачным:
+     правило `.graph-canvas canvas` выше задаёт непрозрачный градиент,
+     который иначе полностью закрывает граф */
+  background: none;
+}
+
+.canvas-tooltip {
+  display: none;
+  position: absolute;
+  padding: 4px 10px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 12px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 50;
+}
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  gap: 8px;
+}
+
+.placeholder h1 {
+  font-size: 36px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+}
+
+.placeholder p {
+  color: #94a3b8;
+  font-size: 16px;
+  margin: 0;
+}
+
+.subgraph-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 20px;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid #6366f1;
+  border-radius: 8px;
+  color: #c7d2fe;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 80;
+  white-space: nowrap;
+}
+
+.subgraph-banner button {
+  padding: 4px 12px;
+  background: rgba(99, 102, 241, 0.3);
+  border: 1px solid #818cf8;
+  border-radius: 6px;
+  color: #e0e7ff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.subgraph-banner button:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.5);
+}
+
+.subgraph-banner button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error-bar {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 20px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  color: #fca5a5;
+  font-size: 13px;
+  z-index: 100;
+}
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(10, 10, 20, 0.7);
+  z-index: 90;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #334155;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===== Right Panel ===== */
+.metrics-panel {
+  background: #111827;
+  border-left: 1px solid #1e293b;
+  padding: 20px 16px;
+  overflow-y: auto;
+}
+
+.metrics-panel h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  color: #e2e8f0;
+}
+
+.metrics-panel section {
+  background: #1a1f2e;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+.metrics-panel h3 {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  margin: 0 0 10px 0;
+}
+
+.topology-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid #6366f1;
+  border-radius: 20px;
+  color: #a5b4fc;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.metric-hint {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 8px;
+}
+
+.metrics-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.metrics-table td {
+  padding: 5px 0;
+  font-size: 13px;
+  border-bottom: 1px solid #1e293b;
+}
+
+.metrics-table td:first-child {
+  color: #94a3b8;
+}
+
+.metrics-table td:last-child {
+  text-align: right;
+  color: #e2e8f0;
+  font-variant-numeric: tabular-nums;
+}
+
+.community-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.community-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+.community-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.community-size {
+  margin-left: auto;
+  color: #64748b;
+  font-size: 12px;
+}
+
+/* Подсказка о том, что настройка сейчас ни на что не влияет */
+.hint-warn {
+  color: #fbbf24;
+}
