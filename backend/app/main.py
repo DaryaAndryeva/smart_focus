@@ -27,7 +27,6 @@ app = FastAPI(
         "Система автоматически анализирует топологию графа, классифицирует его структуру, "
         "выбирает оптимальный алгоритм укладки и реализует управление фокусом — "
         "подсветку контекста выбранного узла с сохранением структурно важных элементов (мостов и хабов).\n\n"
-        "**Поддерживаемые размеры:** до 100 000 вершин."
     ),
     openapi_tags=[
         {
@@ -71,8 +70,6 @@ def _active_analyzer() -> GraphAnalyzer:
 
 
 # ── бинарный протокол ────────────────────────────────────────────────
-# JSON-граф ca-AstroPh (18 772 вершины, 198 050 рёбер) — 13.0 МБ и 0.48 с на 216 822 объекта Pydantic.
-# Бинарный формат — 3.1 МБ и 0.3 мс, читается сразу в типизированные массивы для WebGL и воркера.
 
 BIN_MEDIA = "application/octet-stream"
 
@@ -106,7 +103,6 @@ def _binary_payload(analyzer: GraphAnalyzer, layout_algo=None) -> bytes:
                 "closeness_centrality", "eigenvector_centrality"):
         cols[key] = np.fromiter((centrality[v][key] for v in nodes), np.float32, n)
 
-    # таблица прямого доступа вместо словаря: на порядок быстрее на 198 тысяч обращений
     m = G.number_of_edges()
     flat = np.fromiter(itertools.chain.from_iterable(G.edges()), dtype=np.int64, count=2 * m)
     lookup = np.zeros(int(ids.max()) + 2, dtype=np.uint32)

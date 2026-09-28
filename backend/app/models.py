@@ -65,7 +65,6 @@ class UploadRequest(BaseModel):
     """Загрузка графа по списку рёбер."""
 
     edges: list[list[int]] = Field(description="Список рёбер: [[source, target], ...]")
-    directed: bool = Field(default=False, description="Ориентированный граф")
 
 
 class NodeData(BaseModel):
@@ -120,15 +119,6 @@ class GraphResponse(BaseModel):
     community_sizes: dict[int, int] = Field(description="Размеры сообществ {id: count}")
 
 
-class FocusResponse(BaseModel):
-    """Результат вычисления фокуса: прозрачности всех элементов."""
-
-    node_opacities: dict[int, float] = Field(description="Прозрачность каждого узла {id: opacity}")
-    edge_opacities: dict[str, float] = Field(description='Прозрачность каждого ребра {"src-tgt": opacity}')
-    context_nodes: list[int] = Field(description="Список ID узлов в контексте фокуса")
-    focus_node: int = Field(description="ID фокусного узла")
-
-
 class CollapseRequest(BaseModel):
     """Параметры свёртки крупных сообществ."""
 
@@ -139,9 +129,3 @@ class SubgraphRequest(BaseModel):
     """Запрос подграфа одного сообщества."""
 
     community_id: int = Field(description="ID сообщества для просмотра")
-
-
-class LayoutResponse(BaseModel):
-    """Координаты вершин после пересчёта укладки."""
-
-    positions: dict[int, list[float]] = Field(description="Координаты {id: [x, y]}")

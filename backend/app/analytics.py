@@ -81,15 +81,13 @@ class GraphAnalyzer:
 
     def _igraph(self):
         """Строит (однажды) копию графа в igraph: C-реализации кратно быстрее
-        чистого Python. На ca-AstroPh посредничество по 15 опорным вершинам —
-        0.024 с против 0.822 с у NetworkX, сообщества — 0.082 с против 0.873 с
-        у leidenalg.
+        чистого Python.
         """
         if self._ig is not None:
             return self._ig, self._ig_nodes
         if not _HAS_IGRAPH:
             return None, None
-        G = self.graph.to_undirected() if self.graph.is_directed() else self.graph
+        G = self.graph
         nodes = list(G.nodes())
         index = {n: i for i, n in enumerate(nodes)}
         self._ig = ig.Graph(
@@ -101,10 +99,7 @@ class GraphAnalyzer:
         return self._ig, self._ig_nodes
 
     def _avg_clustering(self) -> float:
-        """Средний коэффициент кластеризации (кэшируется). С igraph считается
-        точно по всем вершинам за 0.014 с; выборка из 500 вершин занимала
-        0.048 с и давала невоспроизводимый результат.
-        """
+        """Средний коэффициент кластеризации (кэшируется)."""
         if self._clustering is not None:
             return self._clustering
         igg, _ = self._igraph()
@@ -135,12 +130,8 @@ class GraphAnalyzer:
         density = nx.density(G)
         avg_degree = (2 * m / n) if n > 0 else 0
 
-        if G.is_directed():
-            num_components = nx.number_weakly_connected_components(G)
-            is_connected = nx.is_weakly_connected(G)
-        else:
-            num_components = nx.number_connected_components(G)
-            is_connected = nx.is_connected(G)
+        num_components = nx.number_connected_components(G)
+        is_connected = nx.is_connected(G)
 
         clustering = self._avg_clustering()
 
@@ -148,7 +139,7 @@ class GraphAnalyzer:
         radius = None
         avg_path_length = None
 
-        if is_connected and n <= 500 and not G.is_directed():
+        if is_connected and n <= 500:
             try:
                 diameter = nx.diameter(G)
                 radius = nx.radius(G)
@@ -263,8 +254,6 @@ class GraphAnalyzer:
             return self._communities
 
         G = self.graph
-        if G.is_directed():
-            G = G.to_undirected()
 
         try:
             if _HAS_IGRAPH:
@@ -310,7 +299,7 @@ class GraphAnalyzer:
         n, m = self._n, self._m
         density = nx.density(G)
 
-        is_conn = nx.is_weakly_connected(G) if G.is_directed() else nx.is_connected(G)
+        is_conn = nx.is_connected(G)
 
         if m == n - 1 and is_conn:
             return TopologyType.TREE

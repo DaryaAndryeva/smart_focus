@@ -77,9 +77,6 @@ def generate_graph(
         return G
 
     if graph_type == GraphType.BALANCED_TREE:
-        # Округление высоты к ближайшей давало на запрос в 500 вершин дерево на 1023.
-        # Берём высоту с запасом: nx.balanced_tree нумерует вершины по уровням,
-        # поэтому первые n вершин сами по себе образуют дерево.
         r = max(m, 2)
         h = 1
         while True:
@@ -98,9 +95,13 @@ def generate_graph(
         return G
 
     if graph_type == GraphType.GRID:
-        side = max(int(n**0.5), 2)
-        G = nx.grid_2d_graph(side, side)
-        return nx.convert_node_labels_to_integers(G)
+        width = max(math.ceil(math.sqrt(n)), 2)
+        height = max(math.ceil(n / width), 2)
+        G = nx.grid_2d_graph(height, width)
+        if G.number_of_nodes() > n:
+            keep = [(r, c) for r in range(height) for c in range(width)][:n]
+            G = G.subgraph(keep).copy()
+        return nx.convert_node_labels_to_integers(G, ordering="sorted")
 
     return nx.gnm_random_graph(n, n * 2)
 
