@@ -294,18 +294,23 @@ class GraphAnalyzer:
         self._topology = self._classify()
         return self._topology
 
+    def _is_sparse(self) -> bool:
+        # Разреженный граф: средняя степень не больше sqrt(n).
+        # Плотность для этого не подходит: при одной и той же средней
+        # степени она падает как 1/n, и один порог значит разное на разных n.
+        if self._n == 0:
+            return True
+        avg_degree = 2 * self._m / self._n
+        return avg_degree <= math.sqrt(self._n)
+
     def _classify(self) -> TopologyType:
         G = self.graph
         n, m = self._n, self._m
-        density = nx.density(G)
-
         is_conn = nx.is_connected(G)
+        sparse = self._is_sparse()
 
         if m == n - 1 and is_conn:
             return TopologyType.TREE
-
-        if density >= 0.5:
-            return TopologyType.DENSE
 
         clustering = self._avg_clustering()
 
@@ -315,7 +320,8 @@ class GraphAnalyzer:
         if modularity > 0.3 and clustering > 0.2:
             return TopologyType.CLUSTERED
 
-        if clustering > 0.3 and density < 0.3 and is_conn and n <= 500:
+        # малый мир: разреженный, высокая кластеризация, короткие пути
+        if sparse and clustering > 0.3 and is_conn and n <= 500:
             try:
                 avg_path = nx.average_shortest_path_length(G)
                 if avg_path < 2 * np.log(max(n, 2)):
@@ -323,10 +329,9 @@ class GraphAnalyzer:
             except Exception:
                 pass
 
-        if density < 0.1:
+        if sparse:
             return TopologyType.SPARSE
-
-        return TopologyType.CLUSTERED
+        return TopologyType.DENSE
 
     # ── layout ──────────────────────────────────────────────────────
 
@@ -341,6 +346,9 @@ class GraphAnalyzer:
         algo = mapping.get(topology, LayoutAlgorithm.SPRING)
         if algo == LayoutAlgorithm.KAMADA_KAWAI and self._n > 500:
             algo = LayoutAlgorithm.MULTILEVEL if self._n > 1000 else LayoutAlgorithm.SPRING
+        # круговая укладка только для почти полных графов
+        if algo == LayoutAlgorithm.CIRCULAR and nx.density(self.graph) < 0.5:
+            algo = LayoutAlgorithm.SPRING
         if algo == LayoutAlgorithm.SPRING and self._n > 2000:
             algo = LayoutAlgorithm.MULTILEVEL
         # Центры кластеров по окружности осмысленны лишь при малом их числе: на
