@@ -23,7 +23,7 @@ def generate_graph(
             p_adj = min(p, 10.0 / n)
         else:
             p_adj = p
-        G = nx.erdos_renyi_graph(n, p_adj)
+        G = nx.fast_gnp_random_graph(n, p_adj)
         _ensure_connected(G)
         return G
 
