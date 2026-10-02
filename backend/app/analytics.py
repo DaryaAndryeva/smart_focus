@@ -13,19 +13,8 @@ try:
     _HAS_IGRAPH = True
 except ImportError:
     _HAS_IGRAPH = False
-
-try:
-    import leidenalg  # noqa: F401
-    _HAS_LEIDEN = True
-except ImportError:
-    _HAS_LEIDEN = False
-
-if not _HAS_IGRAPH and not _HAS_LEIDEN:
     from community import community_louvain
 
-
-# Без засева Лейден и выборка опорных вершин для посредничества дают от
-# запуска к запуску разные результаты: числа в работе невоспроизводимы.
 SEED = 42
 
 
@@ -80,8 +69,7 @@ class GraphAnalyzer:
     # ── зеркало графа в igraph ──────────────────────────────────────
 
     def _igraph(self):
-        """Строит (однажды) копию графа в igraph: C-реализации кратно быстрее
-        чистого Python.
+        """Строит (однажды) копию графа в igraph.
         """
         if self._ig is not None:
             return self._ig, self._ig_nodes
@@ -270,16 +258,12 @@ class GraphAnalyzer:
         return self._communities
 
     def _leiden_communities(self) -> tuple[dict[int, int], float]:
-        """Обнаружение сообществ алгоритмом Лейдена. Встроенная C-реализация
-        igraph на ca-AstroPh отрабатывает за 0.082 с против 0.873 с у пакета
-        leidenalg и даёт модулярность выше (0.6401 против 0.6379).
-        """
+        """Обнаружение сообществ алгоритмом Лейдена."""
+
         igg, nodes = self._igraph()
         if igg is None:
             raise RuntimeError("igraph недоступен")
-        # Обход вершин случаен: без засева число сообществ гуляет (на ca-AstroPh
-        # шесть прогонов дали от 324 до 332). У Graph атрибута rng_seed нет,
-        # генератор задаётся глобально для библиотеки.
+
         ig.set_random_number_generator(random.Random(SEED))
         part = igg.community_leiden(objective_function="modularity", n_iterations=3)
         membership = part.membership
