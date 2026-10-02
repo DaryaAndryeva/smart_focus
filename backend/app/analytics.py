@@ -18,39 +18,6 @@ except ImportError:
 SEED = 42
 
 
-def _spread_duplicates(pos: dict) -> dict:
-    """Разводит по окружности вершины, оказавшиеся в одной точке. Спектральная
-    укладка на симметричном графе (кратные собственные векторы лапласиана) на
-    дереве из 1023 вершин давала всего 35 различных позиций. Радиус разведения
-    мал относительно размаха укладки, поэтому структура сохраняется.
-    """
-    if not pos:
-        return pos
-
-    groups: dict[tuple[float, float], list] = {}
-    for node, p in pos.items():
-        key = (round(float(p[0]), 6), round(float(p[1]), 6))
-        groups.setdefault(key, []).append(node)
-
-    if len(groups) == len(pos):
-        return pos
-
-    coords = np.array([[float(p[0]), float(p[1])] for p in pos.values()])
-    span = float(max(coords.max(axis=0) - coords.min(axis=0)))
-    if span <= 0:
-        span = 1.0
-
-    out = dict(pos)
-    for (cx, cy), members in groups.items():
-        if len(members) == 1:
-            continue
-        radius = span * 0.02 * math.sqrt(len(members))
-        for i, node in enumerate(sorted(members)):
-            angle = 2.0 * math.pi * i / len(members)
-            out[node] = [cx + radius * math.cos(angle), cy + radius * math.sin(angle)]
-    return out
-
-
 class GraphAnalyzer:
     def __init__(self, graph: nx.Graph):
         self.graph = graph
@@ -86,6 +53,8 @@ class GraphAnalyzer:
         self._ig_nodes = nodes
         return self._ig, self._ig_nodes
 
+    # ── global metrics ──────────────────────────────────────────────
+
     def _avg_clustering(self) -> float:
         """Средний коэффициент кластеризации (кэшируется)."""
         if self._clustering is not None:
@@ -105,8 +74,6 @@ class GraphAnalyzer:
         else:
             self._clustering = nx.average_clustering(G)
         return self._clustering
-
-    # ── global metrics ──────────────────────────────────────────────
 
     def global_metrics(self) -> dict:
         if self._global_metrics is not None:
@@ -128,17 +95,22 @@ class GraphAnalyzer:
         avg_path_length = None
 
         if is_connected and n <= 500:
+            igg, _ = self._igraph()
             try:
-                diameter = nx.diameter(G)
-                radius = nx.radius(G)
-                avg_path_length = nx.average_shortest_path_length(G)
+                if igg is not None:
+                    diameter = int(igg.diameter())
+                    radius = int(igg.radius())
+                    avg_path_length = float(igg.average_path_length())
+                else:
+                    diameter = nx.diameter(G)
+                    radius = nx.radius(G)
+                    avg_path_length = nx.average_shortest_path_length(G)
             except Exception:
                 pass
 
-        modularity = self._modularity
-        if modularity is None:
+        if self._modularity is None:
             self.detect_communities()
-            modularity = self._modularity
+        modularity = self._modularity
 
         self._global_metrics = {
             "num_nodes": n,
@@ -157,10 +129,7 @@ class GraphAnalyzer:
     # ── centrality ──────────────────────────────────────────────────
 
     def _betweenness(self) -> dict:
-        """Центральность посредничества. C-реализация Брандеса из igraph на
-        графе из 18 772 вершин даёт 0.120 с при 100 опорных вершинах против
-        0.822 с у NetworkX всего при 15, поэтому выборка здесь крупнее и точнее.
-        """
+        """Центральность посредничества."""
         G = self.graph
         n = self._n
         igg, nodes = self._igraph()
@@ -180,10 +149,6 @@ class GraphAnalyzer:
             except Exception:
                 pass
 
-        # Запасной путь без igraph, пороги здесь ДРУГИЕ: чистый NetworkX на
-        # порядок медленнее (0.822 с против 0.024 с при 15 опорных вершинах на
-        # ca-AstroPh), а свыше 50 000 вершин расчёт отключается вовсе — тогда
-        # сохранение мостов при фокусировке не работает. Замеры сняты с igraph.
         if n > 50000:
             logger.warning(
                 "betweenness отключена: n=%d, igraph недоступен — "
@@ -196,21 +161,49 @@ class GraphAnalyzer:
             return nx.betweenness_centrality(G, k=min(max(30, n // 50), 80))
         return nx.betweenness_centrality(G)
 
+    def _closeness(self) -> dict:
+        """Центральность близости."""
+        igg, nodes = self._igraph()
+        if igg is None:
+            return nx.closeness_centrality(self.graph)
+        n = self._n
+        raw = np.nan_to_num(np.array(igg.closeness(normalized=True)))
+        comp = igg.connected_components()
+        reach = np.array(comp.sizes())[comp.membership]
+        vals = raw * (reach - 1) / max(n - 1, 1)
+        return {nodes[i]: float(vals[i]) for i in range(n)}
+
+    def _eigenvector(self) -> dict:
+        """Собственная центральность."""
+        igg, nodes = self._igraph()
+        if igg is None:
+            return nx.eigenvector_centrality(self.graph, max_iter=200, tol=1e-4)
+        vals = np.array(igg.eigenvector_centrality(scale=True))
+        norm = np.linalg.norm(vals)
+        if norm > 0:
+            vals = vals / norm
+        return {nodes[i]: float(vals[i]) for i in range(self._n)}
+
     def calculate_centrality(self) -> dict[int, dict]:
         if self._centrality:
             return self._centrality
 
         G = self.graph
         n = self._n
+        igg, nodes = self._igraph()
 
-        degree_c = nx.degree_centrality(G)
+        if igg is not None:
+            deg = igg.degree()
+            degree_c = {nodes[i]: deg[i] / max(n - 1, 1) for i in range(n)}
+        else:
+            degree_c = nx.degree_centrality(G)
         betweenness_c = self._betweenness()
 
         if n > 2000:
             closeness_c = dict.fromkeys(G.nodes(), 0.0)
         else:
             try:
-                closeness_c = nx.closeness_centrality(G)
+                closeness_c = self._closeness()
             except Exception:
                 closeness_c = dict.fromkeys(G.nodes(), 0.0)
 
@@ -218,7 +211,7 @@ class GraphAnalyzer:
             eigenvector_c = dict.fromkeys(G.nodes(), 0.0)
         else:
             try:
-                eigenvector_c = nx.eigenvector_centrality(G, max_iter=200, tol=1e-4)
+                eigenvector_c = self._eigenvector()
             except Exception:
                 eigenvector_c = dict.fromkeys(G.nodes(), 0.0)
 
@@ -361,7 +354,7 @@ class GraphAnalyzer:
                 if n > 3000:
                     pos = fast_layout(G, communities=self.detect_communities())
                 else:
-                    pos = _spread_duplicates(nx.spectral_layout(G))
+                    pos = self._spectral_layout()
             elif algorithm == LayoutAlgorithm.KAMADA_KAWAI:
                 if n > 1000:
                     pos = fast_layout(G, communities=self.detect_communities())
@@ -384,6 +377,39 @@ class GraphAnalyzer:
         result = self._normalize_positions(pos)
         self._last_positions = result
         return result
+
+    def _spectral_layout(self) -> dict:
+        """Спектральная укладка с разведением совпавших вершин. На симметричном
+        графе (кратные собственные векторы лапласиана) дерево из 1023 вершин
+        давало всего 35 различных позиций. Совпавшие вершины расставляются по
+        окружности малого радиуса, поэтому структура сохраняется.
+        """
+        pos = nx.spectral_layout(self.graph)
+        if not pos:
+            return pos
+
+        groups: dict[tuple[float, float], list] = {}
+        for node, p in pos.items():
+            key = (round(float(p[0]), 6), round(float(p[1]), 6))
+            groups.setdefault(key, []).append(node)
+
+        if len(groups) == len(pos):
+            return pos
+
+        coords = np.array([[float(p[0]), float(p[1])] for p in pos.values()])
+        span = float(max(coords.max(axis=0) - coords.min(axis=0)))
+        if span <= 0:
+            span = 1.0
+
+        out = dict(pos)
+        for (cx, cy), members in groups.items():
+            if len(members) == 1:
+                continue
+            radius = span * 0.02 * math.sqrt(len(members))
+            for i, node in enumerate(sorted(members)):
+                angle = 2.0 * math.pi * i / len(members)
+                out[node] = [cx + radius * math.cos(angle), cy + radius * math.sin(angle)]
+        return out
 
     def _circular_layout(self) -> dict:
         """Круговая укладка с порядком вершин по сообществам. nx.circular_layout
