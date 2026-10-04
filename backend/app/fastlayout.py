@@ -23,9 +23,6 @@ import networkx as nx
 
 COARSE_N = 400        # останавливаем огрубление, когда вершин меньше
 EXACT_N = 1200        # до этого размера отталкивание считается точно
-# Точная ветвь O(n^2) при n=1200 стоит 20.2 мс на итерацию против 2.7 мс
-# у гибридной, но именно она задаёт глобальное расположение кластеров:
-# при EXACT_N=400 разделение сообществ падает с 6.6 до 3.3 (выигрыш 0.7 с).
 SAMPLE_S = 16         # размер случайной выборки для аппроксимации
 BASE_ITER = 120       # итераций на самом грубом уровне
 FINE_ITER = 25        # минимум итераций на самом тонком уровне
@@ -162,7 +159,7 @@ def _near_repulsion(
 def _forces(
     pos: np.ndarray,
     edges: np.ndarray,
-    ew: np.ndarray,
+    weights: np.ndarray,
     mass: np.ndarray,
     k: float,
     rng: np.random.Generator,
@@ -175,7 +172,7 @@ def _forces(
     # притяжение f_a = w * d вдоль ребра (модель (1,-1))
     if len(edges):
         delta = pos[edges[:, 1]] - pos[edges[:, 0]]
-        fa = ew[:, None] * delta
+        fa = weights[:, None] * delta
         force[:, 0] += np.bincount(edges[:, 0], fa[:, 0], minlength=n)
         force[:, 1] += np.bincount(edges[:, 0], fa[:, 1], minlength=n)
         force[:, 0] -= np.bincount(edges[:, 1], fa[:, 0], minlength=n)
@@ -183,11 +180,14 @@ def _forces(
 
     # отталкивание f_r = m_u*m_v*k^2/d: coef = k^2/d^2, модуль coef*delta = k^2/d
     if n <= EXACT_N:
-        delta = pos[:, None, :] - pos[None, :, :]
-        dist2 = np.maximum(np.einsum("ijk,ijk->ij", delta, delta), 1e-9)
-        coef = (k * k) * np.outer(mass, mass) / dist2
-        np.fill_diagonal(coef, 0.0)
-        force += np.einsum("ij,ijk->ik", coef, delta)
+        for i in range(n):
+            dx = pos[i, 0] - pos[:, 0]  # стрелки от всех вершин к i
+            dy = pos[i, 1] - pos[:, 1]
+            dist2 = np.maximum(dx * dx + dy * dy, 1e-9)
+            dist2[i] = np.inf  # саму себя не отталкиваем
+            coef = (k * k) * mass[i] * mass / dist2
+            force[i, 0] += np.sum(coef * dx)
+            force[i, 1] += np.sum(coef * dy)
     else:
         idx = rng.integers(0, n, size=(n, SAMPLE_S))
         delta = pos[:, None, :] - pos[idx]
@@ -204,7 +204,7 @@ def _forces(
 def _refine(
     pos: np.ndarray,
     edges: np.ndarray,
-    ew: np.ndarray,
+    weights: np.ndarray,
     mass: np.ndarray,
     iters: int,
     rng: np.random.Generator,
@@ -217,7 +217,7 @@ def _refine(
     progress = 0
 
     for _ in range(iters):
-        force = _forces(pos, edges, ew, mass, k, rng)
+        force = _forces(pos, edges, weights, mass, k, rng)
         norms = np.maximum(np.hypot(force[:, 0], force[:, 1]), 1e-9)
         pos = pos + step * force / norms[:, None]
 
